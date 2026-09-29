@@ -24,10 +24,10 @@ Provide a concise research-oriented report with these sections:
 6. Sources
 
 Reconstruction analysis:
-{context["reconstruction"]}
+{context["analysis"]["reconstruction"]}
 
 Segmentation analysis:
-{context["segmentation"]}
+{context["analysis"]["segmentation"]}
 
 Retrieved knowledge:
 {context["knowledge"]}

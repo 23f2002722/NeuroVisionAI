@@ -1,22 +1,34 @@
-from analysis.runner import run_segmentation_analysis
+from analysis.pipeline import run_analysis_pipeline
 from rag.context import build_context
 from rag.llm import generate_report
 from rag.retriever import Retriever
 
 
-def generate_segmentation_report(prediction_path):
-    analysis = run_segmentation_analysis(prediction_path)
-
-    query = (
-        "Explain WT, TC, ET segmentation results, "
-        "segmentation metrics, and limitations."
+def generate_case_report(
+    segmentation_prediction_path,
+    reconstruction_reference_path=None,
+    reconstruction_output_path=None,
+):
+    analysis = run_analysis_pipeline(
+        segmentation_prediction_path=segmentation_prediction_path,
+        reconstruction_reference_path=reconstruction_reference_path,
+        reconstruction_output_path=reconstruction_output_path,
     )
 
-    documents = Retriever().search(query, top_k=3)
+    query = (
+        "Explain MRI reconstruction, WT, TC, ET brain tumor "
+        "segmentation, segmentation metrics, reconstruction metrics, "
+        "and limitations."
+    )
+
+    documents = Retriever().search(
+        query,
+        top_k=3,
+    )
 
     context = build_context(
-        analysis,
-        documents,
+        analysis=analysis,
+        retrieved_documents=documents,
     )
 
     return generate_report(context)
@@ -25,8 +37,8 @@ def generate_segmentation_report(prediction_path):
 if __name__ == "__main__":
     prediction_file = "tests/runner_unimatch_result.npz"
 
-    report = generate_segmentation_report(
-        prediction_file
+    report = generate_case_report(
+        segmentation_prediction_path=prediction_file,
     )
 
     print("\n" + "=" * 60)

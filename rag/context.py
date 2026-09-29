@@ -1,8 +1,4 @@
-def build_context(
-    segmentation_analysis=None,
-    retrieved_documents=None,
-    reconstruction_analysis=None,
-):
+def build_context(analysis, retrieved_documents=None):
     sources = []
     knowledge = []
 
@@ -11,11 +7,7 @@ def build_context(
         knowledge.append(document["text"])
 
     return {
-        "reconstruction": reconstruction_analysis or {
-            "available": False,
-            "metrics": {},
-        },
-        "segmentation": segmentation_analysis or {},
+        "analysis": analysis,
         "knowledge": "\n\n".join(knowledge),
         "sources": sources,
     }
