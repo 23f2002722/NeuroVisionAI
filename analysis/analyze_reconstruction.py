@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from PIL import Image
-from skimage.metrics import mean_squared_error, peak_signal_noise_ratio, structural_similarity
+from skimage.metrics import structural_similarity
 
 
 def load_image(path):
@@ -9,59 +9,64 @@ def load_image(path):
     return np.asarray(image, dtype=np.float32) / 255.0
 
 
-def analyze_reconstruction(input_path, reconstructed_path, reference_path, output_path):
-    input_image = load_image(input_path)
-    reconstructed = load_image(reconstructed_path)
+def calculate_metrics(reference_path, reconstructed_path):
     reference = load_image(reference_path)
+    reconstructed = load_image(reconstructed_path)
 
-    if reconstructed.shape != reference.shape:
+    if reference.shape != reconstructed.shape:
         raise ValueError(
-            f"Shape mismatch: reconstructed={reconstructed.shape}, "
-            f"reference={reference.shape}"
+            f"Image shape mismatch: {reference.shape} vs {reconstructed.shape}"
         )
 
-    mse = mean_squared_error(reference, reconstructed)
-    psnr = peak_signal_noise_ratio(
-        reference,
-        reconstructed,
-        data_range=1.0,
-    )
-    ssim = structural_similarity(
-        reference,
-        reconstructed,
-        data_range=1.0,
+    mse = float(np.mean((reference - reconstructed) ** 2))
+
+    ssim = float(
+        structural_similarity(
+            reference,
+            reconstructed,
+            data_range=1.0,
+        )
     )
 
-    result = {
-        "image_shape": [
-            int(reconstructed.shape[0]),
-            int(reconstructed.shape[1]),
-        ],
-        "metrics": {
-            "mse": float(mse),
-            "psnr": float(psnr),
-            "ssim": float(ssim),
-        },
+    psnr = float("inf") if mse == 0 else float(10 * np.log10(1.0 / mse))
+
+    return {
+        "mse": mse,
+        "ssim": ssim,
+        "psnr": psnr,
     }
 
-    with open(output_path, "w") as f:
-        json.dump(result, f, indent=2)
+
+def analyze_reconstruction(reference_path=None, reconstructed_path=None):
+    result = {
+        "available": False,
+        "metrics": {},
+    }
+
+    if reference_path and reconstructed_path:
+        result["metrics"] = calculate_metrics(
+            reference_path,
+            reconstructed_path,
+        )
+        result["available"] = True
 
     return result
 
 
+def save_analysis(analysis, output_path):
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(analysis, f, indent=2)
+
+
 if __name__ == "__main__":
-    input_file = "input.png"
-    reconstructed_file = "reconstructed.png"
-    reference_file = "reference.png"
+    reference_file = "tests/reference.png"
+    reconstructed_file = "tests/reconstructed.png"
     output_file = "tests/reconstruction_analysis.json"
 
     result = analyze_reconstruction(
-        input_file,
-        reconstructed_file,
         reference_file,
-        output_file,
+        reconstructed_file,
     )
 
     print(json.dumps(result, indent=2))
-    print(f"\nSaved: {output_file}")
+    save_analysis(result, output_file)
