@@ -1,0 +1,62 @@
+{
+  "image_shape": [
+    240,
+    240
+  ],
+  "classes": {
+    "WT": {
+      "positive_pixels": 334,
+      "pixel_percentage": 0.5798611111111112,
+      "mean_probability": 0.0051115709356963634,
+      "max_probability": 0.9978920817375183,
+      "bounding_box": {
+        "x_min": 114,
+        "y_min": 152,
+        "x_max": 150,
+        "y_max": 172,
+        "width": 37,
+        "height": 21
+      },
+      "centroid": {
+        "x": 130.01497005988023,
+        "y": 161.52994011976048
+      }
+    },
+    "TC": {
+      "positive_pixels": 1116,
+      "pixel_percentage": 1.9375,
+      "mean_probability": 0.018228059634566307,
+      "max_probability": 0.9997496008872986,
+      "bounding_box": {
+        "x_min": 99,
+        "y_min": 144,
+        "x_max": 171,
+        "y_max": 177,
+        "width": 73,
+        "height": 34
+      },
+      "centroid": {
+        "x": 131.47670250896059,
+        "y": 163.54121863799284
+      }
+    },
+    "ET": {
+      "positive_pixels": 50,
+      "pixel_percentage": 0.08680555555555555,
+      "mean_probability": 0.0008718222961761057,
+      "max_probability": 0.9962384700775146,
+      "bounding_box": {
+        "x_min": 140,
+        "y_min": 157,
+        "x_max": 151,
+        "y_max": 165,
+        "width": 12,
+        "height": 9
+      },
+      "centroid": {
+        "x": 144.82,
+        "y": 161.16
+      }
+    }
+  }
+}
