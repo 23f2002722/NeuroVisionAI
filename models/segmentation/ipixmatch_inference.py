@@ -163,6 +163,41 @@ def segment(model, image, threshold=0.3):
 
     return probabilities, masks
 
+def segment_image(
+    image,
+    checkpoint_path,
+    output_path=None,
+    threshold=0.3,
+):
+    model = load_model(checkpoint_path)
+
+    image = np.asarray(image, dtype=np.float32)
+
+    if image.ndim != 3:
+        raise ValueError(
+            f"Expected 3D image array, got shape {image.shape}"
+        )
+
+    if image.shape[0] != IN_CHANNELS:
+        raise ValueError(
+            f"Expected {IN_CHANNELS} channels, "
+            f"got {image.shape[0]}"
+        )
+
+    probabilities, masks = segment(
+        model,
+        image,
+        threshold,
+    )
+
+    if output_path:
+        np.savez_compressed(
+            output_path,
+            probabilities=probabilities,
+            masks=masks,
+        )
+
+    return probabilities, masks
 
 def segment_h5(
     image_path,

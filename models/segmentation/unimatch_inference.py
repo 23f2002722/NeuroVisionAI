@@ -120,9 +120,26 @@ def load_h5(image_path):
     with h5py.File(image_path, "r") as f:
         image = f["image"][:].astype(np.float32)
 
-    image = np.transpose(image, (2, 0, 1))
+    return np.transpose(image, (2, 0, 1))
 
-    return image
+def prepare_image(image):
+    image = np.asarray(image, dtype=np.float32)
+
+    if image.ndim != 3:
+        raise ValueError(
+            f"Expected 3D image array, got shape {image.shape}"
+        )
+
+    if image.shape[0] == IN_CHANNELS:
+        channels_first = image
+    elif image.shape[-1] == IN_CHANNELS:
+        channels_first = np.transpose(image, (2, 0, 1))
+    else:
+        raise ValueError(
+            f"Expected {IN_CHANNELS} MRI channels, got shape {image.shape}"
+        )
+
+    return normalize_image(channels_first)
 
 
 def normalize_image(image):
@@ -156,6 +173,30 @@ def segment(model, image, threshold=0.3):
 
     return probabilities, masks
 
+def segment_image(
+    image,
+    checkpoint_path,
+    output_path=None,
+    threshold=0.3,
+):
+    model = load_model(checkpoint_path)
+
+    image = prepare_image(image)
+
+    probabilities, masks = segment(
+        model,
+        image,
+        threshold,
+    )
+
+    if output_path:
+        np.savez_compressed(
+            output_path,
+            probabilities=probabilities,
+            masks=masks,
+        )
+
+    return probabilities, masks
 
 def segment_h5(
     image_path,
@@ -165,14 +206,7 @@ def segment_h5(
 ):
     model = load_model(checkpoint_path)
 
-    image = load_h5(image_path)
-    image = normalize_image(image)
-
-    if image.shape[0] != IN_CHANNELS:
-        raise ValueError(
-            f"Expected {IN_CHANNELS} MRI channels, "
-            f"got {image.shape[0]}"
-        )
+    image = prepare_image(load_h5(image_path))
 
     probabilities, masks = segment(
         model,
