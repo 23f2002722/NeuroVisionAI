@@ -102,3 +102,34 @@ def create_segmentation_previews(
         )
 
         plt.close(figure)
+
+def create_preview_metadata(analysis, output_dir):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    metadata = {}
+
+    labels = {
+        "WT": "Whole Tumor",
+        "TC": "Tumor Core",
+        "ET": "Enhancing Tumor",
+    }
+
+    for name, label in labels.items():
+        class_analysis = analysis["classes"][name]
+
+        metadata[name] = {
+            "image": f"previews/{name}.png",
+            "label": label,
+            "slice": class_analysis["max_slice"],
+            "pixels": class_analysis["max_slice_pixels"],
+        }
+
+    import json
+
+    with open(
+        output_dir / "previews.json",
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(metadata, file, indent=2)

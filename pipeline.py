@@ -9,6 +9,12 @@ from analysis.output import (
 )
 import shutil
 
+from analysis.output import (
+    create_segmentation_zip,
+    create_segmentation_previews,
+    create_preview_metadata,
+)
+
 def run_pipeline(input_path, output_dir, model_name="unimatch"):
     input_path = Path(input_path)
     output_dir = Path(output_dir)
@@ -53,6 +59,19 @@ def run_pipeline(input_path, output_dir, model_name="unimatch"):
             output_dir=segmentation_dir,
         )
         
+        previews_dir = output_dir / "previews"
+        previews_dir.mkdir(parents=True, exist_ok=True)
+
+        for class_name in ("WT", "TC", "ET"):
+            source = segmentation_dir / f"preview_max_{class_name}.png"
+            destination = previews_dir / f"{class_name}.png"
+            shutil.copy2(source, destination)
+
+        create_preview_metadata(
+            result["analysis"],
+            previews_dir,
+        )
+
         segmentation_zip = create_segmentation_zip(
             segmentation_dir,
             output_dir / "segmentation_overlays",
