@@ -30,8 +30,9 @@ def load_dicom_modalities(series):
             voxel_spacing = result["voxel_spacing"]
         elif volume.shape != shape:
             raise ValueError(
-                f"Volume shape mismatch for {modality}: "
-                f"expected {shape}, got {volume.shape}"
+                f"DICOM modalities have incompatible spatial dimensions. "
+                f"{modality} has shape {volume.shape}, while the reference modality "
+                f"has shape {shape}. Registration/resampling is required before segmentation."
             )
 
         volumes.append(volume)

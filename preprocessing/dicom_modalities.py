@@ -1,12 +1,4 @@
-from preprocessing.dicom import scan_dicom_series
-
-
-MODALITY_KEYWORDS = {
-    "FLAIR": ("flair",),
-    "T1ce": ("t1ce", "t1c", "post-contrast", "post contrast", "postcontrast"),
-    "T1": ("t1",),
-    "T2": ("t2",),
-}
+REQUIRED_MODALITIES = {"FLAIR", "T1", "T1ce", "T2"}
 
 
 def identify_dicom_modality(series_info):
@@ -27,7 +19,8 @@ def identify_dicom_modality(series_info):
         contrast_keywords = (
             "post",
             "contrast",
-            "ce",
+            "t1ce",
+            "t1c",
             "gad",
             "gadolinium",
         )
@@ -56,7 +49,6 @@ def identify_dicom_modalities(series):
 
     return modalities
 
-REQUIRED_MODALITIES = {"FLAIR", "T1", "T1ce", "T2"}
 
 def validate_dicom_modalities(modalities):
     missing = get_missing_modalities(modalities)
@@ -73,6 +65,7 @@ def validate_dicom_modalities(modalities):
         "detected": sorted(modalities),
         "missing": [],
     }
+
 
 def get_missing_modalities(modalities):
     return sorted(REQUIRED_MODALITIES - set(modalities))
