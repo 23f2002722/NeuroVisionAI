@@ -11,6 +11,26 @@ def build_report_prompt(context):
         analysis
     )
 
+    ground_truth_available = any(
+        value.get("dice") is not None
+        for value in analysis.get("classes", {}).values()
+        if isinstance(value, dict)
+    )
+
+    if ground_truth_available:
+        dice_instruction = """
+Ground-truth segmentation is available for this case.
+Report the calculated WT, TC, ET, and mean Dice values exactly as provided.
+Treat these as case-specific measurements.
+Do not recalculate or modify them.
+"""
+    else:
+        dice_instruction = """
+Ground-truth segmentation is not available for this case.
+State that WT, TC, ET, and mean Dice cannot be calculated for this case.
+Do not invent or estimate Dice values.
+"""
+
     return f"""
 You are an AI-assisted medical imaging research report generator.
 
@@ -24,7 +44,10 @@ Do not present model-level benchmark results as case-specific results.
 Clearly distinguish:
 - observations directly calculated from the current model output
 - general information retrieved from the knowledge base
+- case-specific metrics calculated using ground truth
 - metrics that cannot be calculated because ground truth or reference data is unavailable
+
+{dice_instruction}
 
 Provide a concise research-oriented report with these sections:
 

@@ -9,6 +9,12 @@ from preprocessing.dicom_modalities import (
     validate_dicom_modalities,
 )
 
+def find_ground_truth(nifti_paths):
+    for path in nifti_paths:
+        if Path(path).name.endswith("-seg.nii"):
+            return str(path)
+
+    return None 
 
 def prepare_case(upload_path):
     upload_path = Path(upload_path)
@@ -25,11 +31,13 @@ def prepare_case(upload_path):
 
     if nifti_paths:
         modalities = identify_nifti_modalities(nifti_paths)
+        ground_truth = find_ground_truth(nifti_paths)
 
         return {
             "input_type": "nifti",
             "case_dir": str(case_dir),
             "modalities": modalities,
+            "ground_truth": ground_truth,
         }
 
     if dicom_paths:

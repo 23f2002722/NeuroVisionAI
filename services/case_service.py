@@ -22,6 +22,7 @@ def run_case(upload_path, model_name="unimatch"):
             case["modalities"],
             model_name,
             SEGMENTATION_CHECKPOINTS[model_name],
+            ground_truth_path=case.get("ground_truth"),
         )
     elif case["input_type"] == "dicom":
         result = run_dicom_segmentation(
