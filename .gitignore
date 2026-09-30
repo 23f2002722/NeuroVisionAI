@@ -19,6 +19,7 @@ data/
 datasets/
 
 outputs/
+output/
 results/
 uploads/
 logs/

@@ -16,15 +16,28 @@ def generate_report(context):
         raise ValueError("GEMINI_API_KEY is not set.")
 
     client = genai.Client(api_key=api_key)
-
     prompt = build_report_prompt(context)
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
 
-    return response.text
+        return response.text
+
+    except Exception as error:
+        analysis = context.get("analysis", {})
+
+        return (
+            "## AI-Assisted Medical Imaging Research Report\n\n"
+            "Gemini report generation was temporarily unavailable. "
+            "The structured analysis was completed successfully.\n\n"
+            "### Analysis\n\n"
+            f"{analysis}\n\n"
+            "### Report Status\n\n"
+            f"LLM generation error: {error}"
+        )
 
 
 if __name__ == "__main__":

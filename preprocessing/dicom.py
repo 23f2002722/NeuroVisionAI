@@ -28,6 +28,7 @@ def scan_dicom_series(case_dir):
 
         series[series_uid].append({
             "path": str(path),
+            "study_instance_uid": getattr(dataset, "StudyInstanceUID", ""),
             "series_description": getattr(dataset, "SeriesDescription", ""),
             "protocol_name": getattr(dataset, "ProtocolName", ""),
             "modality": getattr(dataset, "Modality", ""),
