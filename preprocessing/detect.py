@@ -1,4 +1,5 @@
 from pathlib import Path
+import pydicom
 
 
 NIFTI_EXTENSIONS = {".nii", ".nii.gz"}
@@ -13,6 +14,13 @@ def get_file_type(path):
 
     if path.suffix.lower() in {".dcm", ".dicom"}:
         return "dicom"
+
+    if not path.suffix:
+        try:
+            pydicom.dcmread(path, stop_before_pixels=True)
+            return "dicom"
+        except Exception:
+            pass
 
     return "unsupported"
 

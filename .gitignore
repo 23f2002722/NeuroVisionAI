@@ -32,3 +32,5 @@ logs/
 Thumbs.db
 
 rag/vectorstore/
+
+tests/*
