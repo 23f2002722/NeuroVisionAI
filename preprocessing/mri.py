@@ -1,25 +1,19 @@
 import numpy as np
-
 from preprocessing.config import MODALITY_ORDER
 
 
 def normalize_mri(image):
     image = np.asarray(image, dtype=np.float32)
 
-    if image.ndim != 3:
-        raise ValueError(
-            f"Expected 3D MRI array, got shape {image.shape}"
-        )
+    if image.ndim not in (3, 4):
+        raise ValueError(f"Expected MRI array with 3 or 4 dimensions, got shape {image.shape}")
 
     if image.shape[0] == len(MODALITY_ORDER):
         channels_first = image
-    elif image.shape[-1] == len(MODALITY_ORDER):
+    elif image.shape[-1] == len(MODALITY_ORDER) and image.ndim == 3:
         channels_first = np.transpose(image, (2, 0, 1))
     else:
-        raise ValueError(
-            f"Expected {len(MODALITY_ORDER)} MRI channels, "
-            f"got shape {image.shape}"
-        )
+        raise ValueError(f"Expected {len(MODALITY_ORDER)} MRI channels, got shape {image.shape}")
 
     output = np.zeros_like(channels_first, dtype=np.float32)
 

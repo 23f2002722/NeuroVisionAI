@@ -1,40 +1,35 @@
 from pathlib import Path
-
-import numpy as np
-from PIL import Image
-
-from preprocessing.config import MODALITY_ORDER
-from preprocessing.mri import normalize_mri
+import tempfile
+import zipfile
 
 
-def load_modality(path):
-    image = Image.open(path).convert("L")
-    return np.asarray(image, dtype=np.float32)
+def extract_case(zip_path):
+    zip_path = Path(zip_path)
+
+    if not zip_path.exists():
+        raise FileNotFoundError(zip_path)
+
+    extract_dir = Path(
+        tempfile.mkdtemp(prefix="neurovisionai_case_")
+    )
+
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        for member in archive.infolist():
+            target = (extract_dir / member.filename).resolve()
+
+            if not str(target).startswith(str(extract_dir.resolve())):
+                raise ValueError("Unsafe ZIP file")
+
+        archive.extractall(extract_dir)
+
+    return extract_dir
 
 
-def load_case(modality_paths):
-    images = []
+def list_case_files(case_dir):
+    case_dir = Path(case_dir)
 
-    for modality in MODALITY_ORDER:
-        if modality not in modality_paths:
-            raise ValueError(
-                f"Missing modality: {modality}"
-            )
-
-        path = Path(modality_paths[modality])
-
-        if not path.exists():
-            raise FileNotFoundError(path)
-
-        images.append(load_modality(path))
-
-    shapes = {image.shape for image in images}
-
-    if len(shapes) != 1:
-        raise ValueError(
-            f"All modalities must have the same shape, got {shapes}"
-        )
-
-    image = np.stack(images, axis=0)
-
-    return normalize_mri(image)
+    return [
+        path
+        for path in case_dir.rglob("*")
+        if path.is_file()
+    ]

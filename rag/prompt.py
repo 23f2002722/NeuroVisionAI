@@ -1,4 +1,16 @@
 def build_report_prompt(context):
+    analysis = context["analysis"]
+
+    reconstruction = analysis.get(
+        "reconstruction",
+        "Reconstruction analysis is not available for this case."
+    )
+
+    segmentation = analysis.get(
+        "segmentation",
+        analysis
+    )
+
     return f"""
 You are an AI-assisted medical imaging research report generator.
 
@@ -24,10 +36,10 @@ Provide a concise research-oriented report with these sections:
 6. Sources
 
 Reconstruction analysis:
-{context["analysis"]["reconstruction"]}
+{reconstruction}
 
 Segmentation analysis:
-{context["analysis"]["segmentation"]}
+{segmentation}
 
 Retrieved knowledge:
 {context["knowledge"]}

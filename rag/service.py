@@ -69,3 +69,29 @@ def run_case_analysis(
         "sources": context["sources"],
         "report": report,
     }
+
+def generate_analysis_report(
+    analysis,
+    model_name="unimatch",
+):
+    query = (
+        "Explain MRI reconstruction, WT, TC, ET brain tumor "
+        "segmentation, segmentation metrics, reconstruction metrics, "
+        "and limitations."
+    )
+
+    documents = Retriever().search(query, top_k=3)
+
+    context = build_context(
+        analysis=analysis,
+        retrieved_documents=documents,
+    )
+
+    report = generate_report(context)
+
+    return {
+        "model": model_name,
+        "analysis": analysis,
+        "sources": context["sources"],
+        "report": report,
+    }
