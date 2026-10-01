@@ -22,6 +22,9 @@ def utcnow() -> datetime:
 def iso(value: datetime | None) -> str | None:
     return value.isoformat(timespec="seconds") + "Z" if value else None
 
+def iso_required(value: datetime) -> str:
+    return value.isoformat(timespec="seconds") + "Z"
+
 
 class Base(DeclarativeBase):
     pass

@@ -1,11 +1,36 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 from pydantic import BaseModel
 
+
 SCHEMA_VERSION = "0.1"
-Status = Literal["queued", "running", "completed", "failed"]
+
+Status: TypeAlias = Literal[
+    "queued",
+    "running",
+    "completed",
+    "failed",
+]
+
+PipelineMode: TypeAlias = Literal[
+    "real",
+    "mock",
+]
+
+ReportSource: TypeAlias = Literal[
+    "llm",
+    "fallback",
+    "mock",
+    "unknown",
+]
+
+ImageRegion: TypeAlias = Literal[
+    "WT",
+    "TC",
+    "ET",
+]
 
 
 class WarningItem(BaseModel):
@@ -19,15 +44,15 @@ class ErrorInfo(BaseModel):
 
 
 class ImageInfo(BaseModel):
-    region: Literal["WT", "TC", "ET"]
+    region: ImageRegion
     label: str
-    slice: int | None
-    pixels: int | None
+    slice: int | None = None
+    pixels: int | None = None
     url: str
 
 
 class Downloads(BaseModel):
-    overlays_zip: str | None
+    overlays_zip: str | None = None
 
 
 class CaseCreated(BaseModel):
@@ -38,23 +63,30 @@ class CaseCreated(BaseModel):
 
 class CaseResponse(BaseModel):
     schema_version: str = SCHEMA_VERSION
+
     case_id: str
     status: Status
+
     created_at: str
-    started_at: str | None
-    finished_at: str | None
+    started_at: str | None = None
+    finished_at: str | None = None
     expires_at: str
-    elapsed_seconds: float | None
+
+    elapsed_seconds: float | None = None
+
     model: str
     input_type: str
-    pipeline_mode: Literal["real", "mock"]
+    pipeline_mode: PipelineMode
     ground_truth_supplied: bool
-    analysis: dict[str, Any] | None
-    images: list[ImageInfo]
+
+    analysis: dict[str, Any] | None = None
+    images: list[ImageInfo] = []
     downloads: Downloads
     report_available: bool
-    warnings: list[WarningItem]
-    error: ErrorInfo | None
+
+    warnings: list[WarningItem] = []
+    error: ErrorInfo | None = None
+
     disclaimer: str
 
 
@@ -62,8 +94,8 @@ class ReportResponse(BaseModel):
     case_id: str
     format: Literal["markdown"] = "markdown"
     text: str
-    report_source: Literal["llm", "fallback", "mock", "unknown"]
-    sources: list[str] | None  # null until the pipeline returns RAG sources
+    report_source: ReportSource
+    sources: list[str] | None = None
     disclaimer: str
 
 
@@ -73,7 +105,7 @@ class CaseListItem(BaseModel):
     created_at: str
     model: str
     input_type: str
-    pipeline_mode: Literal["real", "mock"]
+    pipeline_mode: PipelineMode
 
 
 class HealthCheck(BaseModel):
@@ -84,6 +116,6 @@ class HealthCheck(BaseModel):
 
 class HealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
-    pipeline_mode: Literal["real", "mock"]
+    pipeline_mode: PipelineMode
     dispatcher_alive: bool
     checks: list[HealthCheck]
