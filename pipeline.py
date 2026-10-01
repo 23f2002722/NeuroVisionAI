@@ -50,7 +50,7 @@ def run_pipeline(input_path, output_dir, model_name="unimatch"):
     segmentation_zip = None
     previews = None
 
-    if result["input_type"] == "nifti":
+    if result["input_type"] in ("nifti", "dicom"):
         image = result["segmentation"]["image"]
         predictions = result["segmentation"]["predictions"]
 

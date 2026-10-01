@@ -26,4 +26,5 @@ def run_dicom_segmentation(
         "shape": volume["shape"],
         "voxel_spacing": volume["voxel_spacing"],
         "modalities": volume["modalities"],
+        "image": volume["image"],
     }

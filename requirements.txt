@@ -21,3 +21,5 @@ sentence-transformers
 faiss-cpu
 
 google-genai
+
+SimpleITK==2.5.6
