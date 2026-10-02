@@ -1,11 +1,11 @@
 from __future__ import annotations
-
+ 
 import logging
 from datetime import timedelta
-
+ 
 from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from fastapi.responses import FileResponse, Response
-
+ 
 from . import readiness
 from .config import DISCLAIMER
 from .db import (
@@ -14,6 +14,7 @@ from .db import (
     QUEUED,
     Case,
     iso,
+    iso_required,
     utcnow,
 )
 from .errors import ApiError
@@ -27,10 +28,7 @@ from .schemas import (
     HealthCheck,
     HealthResponse,
     ImageInfo,
-    PipelineMode,
     ReportResponse,
-    ReportSource,
-    Status,
     WarningItem,
 )
 from .storage import (
@@ -40,107 +38,53 @@ from .storage import (
     new_case_id,
     remove_tree,
 )
-
-
+ 
+ 
 log = logging.getLogger(__name__)
-
+ 
 router = APIRouter(prefix="/api")
-
+ 
 MULTIPART_OVERHEAD = 1024 * 1024
-
-_VALID_STATUSES = {
-    "queued",
-    "running",
-    "completed",
-    "failed",
-}
-
-_VALID_PIPELINE_MODES = {
-    "real",
-    "mock",
-}
-
-_VALID_REPORT_SOURCES = {
-    "llm",
-    "fallback",
-    "mock",
-    "unknown",
-}
-
-
+ 
 def _case_url(case_id: str) -> str:
     return f"/api/cases/{case_id}"
-
-
-def _iso_required(value) -> str:
-    """Serialize a required datetime as an ISO-8601 UTC string."""
-    return value.isoformat(timespec="seconds") + "Z"
-
-
-def _status(value: str) -> Status:
-    """Convert a database status into the API Status type."""
-    if value not in _VALID_STATUSES:
-        log.error("Invalid case status in database: %r", value)
-        raise RuntimeError(f"Invalid case status: {value!r}")
-
-    return value  # type: ignore[return-value]
-
-
-def _pipeline_mode(value: str) -> PipelineMode:
-    """Convert a database pipeline mode into the API PipelineMode type."""
-    if value not in _VALID_PIPELINE_MODES:
-        log.error("Invalid pipeline mode in database: %r", value)
-        raise RuntimeError(f"Invalid pipeline mode: {value!r}")
-
-    return value  # type: ignore[return-value]
-
-
-def _report_source(value: str | None) -> ReportSource:
-    """Convert a database report source into the API ReportSource type."""
-    if value in _VALID_REPORT_SOURCES:
-        return value  # type: ignore[return-value]
-
-    if value is not None:
-        log.warning("Unknown report source in database: %r", value)
-
-    return "unknown"
-
-
+ 
+ 
 def _error_info(case: Case) -> ErrorInfo | None:
     """Build ErrorInfo only when both error fields are present."""
     if case.status != FAILED:
         return None
-
+ 
     if case.error_code is None or case.error_message is None:
         log.error(
             "Failed case %s has incomplete error information",
             case.id,
         )
         return None
-
+ 
     return ErrorInfo(
         code=case.error_code,
         message=case.error_message,
     )
-
-
+ 
+ 
 def _load_case(request: Request, case_id: str) -> Case:
     case = (
         request.app.state.db.get(case_id)
         if is_valid_case_id(case_id)
         else None
     )
-
+ 
     if case is None:
         raise ApiError(
             404,
             "CASE_NOT_FOUND",
             "No case with this id exists (it may have expired).",
         )
-
+ 
     return case
-
-
+ 
+ 
 def _require_completed(case: Case) -> None:
     if case.status == FAILED:
         raise ApiError(
@@ -148,27 +92,27 @@ def _require_completed(case: Case) -> None:
             "CASE_FAILED",
             "This case failed; no results are available.",
         )
-
+ 
     if case.status != COMPLETED:
         raise ApiError(
             409,
             "NOT_READY",
             "This case is not finished yet.",
         )
-
-
+ 
+ 
 def _build_case_response(case: Case) -> CaseResponse:
     base = _case_url(case.id)
-
+ 
     images: list[ImageInfo] = []
-
+ 
     if case.status == COMPLETED and case.previews:
         for region in REGIONS:
             info = case.previews.get(region)
-
+ 
             if not info:
                 continue
-
+ 
             images.append(
                 ImageInfo(
                     region=region,
@@ -178,9 +122,9 @@ def _build_case_response(case: Case) -> CaseResponse:
                     url=f"{base}/images/{region}",
                 )
             )
-
+ 
     elapsed: float | None = None
-
+ 
     if case.started_at:
         elapsed = round(
             (
@@ -189,20 +133,20 @@ def _build_case_response(case: Case) -> CaseResponse:
             ).total_seconds(),
             1,
         )
-
+ 
     done = case.status == COMPLETED
-
+ 
     return CaseResponse(
         case_id=case.id,
-        status=_status(case.status),
-        created_at=_iso_required(case.created_at),
+        status=case.status,
+        created_at=iso_required(case.created_at),
         started_at=iso(case.started_at),
         finished_at=iso(case.finished_at),
-        expires_at=_iso_required(case.expires_at),
+        expires_at=iso_required(case.expires_at),
         elapsed_seconds=elapsed,
         model=case.model,
         input_type=case.input_type,
-        pipeline_mode=_pipeline_mode(case.pipeline_mode),
+        pipeline_mode=case.pipeline_mode,
         ground_truth_supplied=case.ground_truth_supplied,
         analysis=case.analysis if done else None,
         images=images,
@@ -221,8 +165,8 @@ def _build_case_response(case: Case) -> CaseResponse:
         error=_error_info(case),
         disclaimer=DISCLAIMER,
     )
-
-
+ 
+ 
 @router.post(
     "/cases",
     response_model=CaseCreated,
@@ -236,9 +180,9 @@ def create_case(
     state = request.app.state
     settings = state.settings
     db = state.db
-
+ 
     chosen = (model or settings.default_model).strip().lower()
-
+ 
     if chosen not in settings.allowed_models:
         raise ApiError(
             422,
@@ -248,9 +192,9 @@ def create_case(
                 f"Supported: {', '.join(settings.allowed_models)}."
             ),
         )
-
+ 
     declared = request.headers.get("content-length")
-
+ 
     if (
         declared
         and declared.isdigit()
@@ -265,7 +209,7 @@ def create_case(
                 f"{settings.max_upload_bytes // (1024 * 1024)} MB limit."
             ),
         )
-
+ 
     if settings.pipeline_mode == "real":
         for check in readiness.run_checks(settings, chosen):
             if not check.ok and check.blocking:
@@ -274,45 +218,45 @@ def create_case(
                     check.code,
                     check.detail,
                 )
-
+ 
     if db.count_queued() >= settings.max_queue_size:
         raise ApiError(
             429,
             "QUEUE_FULL",
             "The server is busy. Please try again shortly.",
         )
-
+ 
     case_id = new_case_id()
     paths = case_paths(
         settings.cases_dir,
         case_id,
     )
-
+ 
     try:
         save_uploads(
             [(f.filename or "", f.file) for f in files],
             paths,
             settings,
         )
-
+ 
         info = validate_case(paths.input)
-
+ 
     except ApiError:
         remove_tree(paths.root)
         raise
-
+ 
     except Exception:
         log.exception("Unexpected intake failure")
         remove_tree(paths.root)
-
+ 
         raise ApiError(
             500,
             "INTERNAL_ERROR",
             "The upload could not be processed.",
         )
-
+ 
     now = utcnow()
-
+ 
     db.add_case(
         Case(
             id=case_id,
@@ -328,9 +272,9 @@ def create_case(
             file_count=info.file_count,
         )
     )
-
+ 
     state.dispatcher.wake()
-
+ 
     log.info(
         "Case %s queued (model=%s, type=%s, files=%d)",
         case_id,
@@ -338,14 +282,14 @@ def create_case(
         info.input_type,
         info.file_count,
     )
-
+ 
     return CaseCreated(
         case_id=case_id,
-        status=_status(QUEUED),
+        status=QUEUED,
         status_url=_case_url(case_id),
     )
-
-
+ 
+ 
 @router.get(
     "/cases",
     response_model=list[CaseListItem],
@@ -355,20 +299,20 @@ def list_cases(
     limit: int = Query(20, ge=1, le=100),
 ):
     cases = request.app.state.db.list_recent(limit)
-
+ 
     return [
         CaseListItem(
             case_id=case.id,
-            status=_status(case.status),
-            created_at=_iso_required(case.created_at),
+            status=case.status,
+            created_at=iso_required(case.created_at),
             model=case.model,
             input_type=case.input_type,
-            pipeline_mode=_pipeline_mode(case.pipeline_mode),
+            pipeline_mode=case.pipeline_mode,
         )
         for case in cases
     ]
-
-
+ 
+ 
 @router.get(
     "/cases/{case_id}",
     response_model=CaseResponse,
@@ -380,8 +324,8 @@ def get_case(
     return _build_case_response(
         _load_case(request, case_id)
     )
-
-
+ 
+ 
 @router.get(
     "/cases/{case_id}/report",
     response_model=ReportResponse,
@@ -392,31 +336,31 @@ def get_report(
 ):
     case = _load_case(request, case_id)
     _require_completed(case)
-
+ 
     paths = case_paths(
         request.app.state.settings.cases_dir,
         case_id,
     )
-
+ 
     if not paths.report.is_file():
         raise ApiError(
             404,
             "NO_REPORT",
             "The report file is no longer available.",
         )
-
+ 
     return ReportResponse(
         case_id=case_id,
         text=paths.report.read_text(
             encoding="utf-8",
             errors="replace",
         ),
-        report_source=_report_source(case.report_source),
+        report_source=case.report_source or "unknown",
         sources=None,
         disclaimer=DISCLAIMER,
     )
-
-
+ 
+ 
 @router.get("/cases/{case_id}/images/{region}")
 def get_image(
     request: Request,
@@ -425,21 +369,21 @@ def get_image(
 ):
     case = _load_case(request, case_id)
     _require_completed(case)
-
+ 
     region = region.upper()
-
+ 
     if region not in REGIONS:
         raise ApiError(
             404,
             "IMAGE_NOT_FOUND",
             "Region must be one of WT, TC, ET.",
         )
-
+ 
     path = case_paths(
         request.app.state.settings.cases_dir,
         case_id,
     ).preview(region)
-
+ 
     if (
         not case.previews
         or region not in case.previews
@@ -450,7 +394,7 @@ def get_image(
             "NO_IMAGES",
             "No preview image is available for this case.",
         )
-
+ 
     return FileResponse(
         path,
         media_type="image/png",
@@ -458,8 +402,8 @@ def get_image(
             "Cache-Control": "private, max-age=3600",
         },
     )
-
-
+ 
+ 
 @router.get("/cases/{case_id}/download/overlays")
 def download_overlays(
     request: Request,
@@ -467,26 +411,26 @@ def download_overlays(
 ):
     case = _load_case(request, case_id)
     _require_completed(case)
-
+ 
     path = case_paths(
         request.app.state.settings.cases_dir,
         case_id,
     ).overlays_zip
-
+ 
     if not case.has_overlays_zip or not path.is_file():
         raise ApiError(
             404,
             "NO_OVERLAYS",
             "No overlay archive is available for this case.",
         )
-
+ 
     return FileResponse(
         path,
         media_type="application/zip",
         filename=f"neurovisionai_{case_id[:8]}_overlays.zip",
     )
-
-
+ 
+ 
 @router.delete(
     "/cases/{case_id}",
     status_code=204,
@@ -501,18 +445,18 @@ def delete_case(
             "CASE_NOT_FOUND",
             "No case with this id exists.",
         )
-
+ 
     outcome = request.app.state.db.delete_if_not_running(
         case_id
     )
-
+ 
     if outcome == "missing":
         raise ApiError(
             404,
             "CASE_NOT_FOUND",
             "No case with this id exists.",
         )
-
+ 
     if outcome == "running":
         raise ApiError(
             409,
@@ -522,38 +466,36 @@ def delete_case(
                 "Try again when it finishes."
             ),
         )
-
+ 
     remove_tree(
         case_paths(
             request.app.state.settings.cases_dir,
             case_id,
         ).root
     )
-
+ 
     return Response(status_code=204)
-
-
+ 
+ 
 @router.get(
     "/health",
     response_model=HealthResponse,
 )
 def health(request: Request):
     state = request.app.state
-
+ 
     checks = readiness.run_checks(
         state.settings
     )
-
+ 
     alive = state.dispatcher.is_alive()
     ok = alive and all(
         check.ok for check in checks
     )
-
+ 
     return HealthResponse(
         status="ok" if ok else "degraded",
-        pipeline_mode=_pipeline_mode(
-            state.settings.pipeline_mode
-        ),
+        pipeline_mode=state.settings.pipeline_mode,
         dispatcher_alive=alive,
         checks=[
             HealthCheck(
