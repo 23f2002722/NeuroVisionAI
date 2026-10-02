@@ -95,3 +95,54 @@ def generate_analysis_report(
         "sources": context["sources"],
         "report": report,
     }
+
+def generate_reconstruction_report(analysis):
+    query = (
+        "Explain MRI reconstruction using diffusion models, "
+        "MSE, SSIM, PSNR, reconstruction limitations, "
+        "and the interpretation of reconstruction quality."
+    )
+
+    documents = Retriever().search(
+        query,
+        top_k=3,
+    )
+
+    context = build_context(
+        analysis=analysis,
+        retrieved_documents=documents,
+    )
+
+    report = generate_report(context)
+
+    return {
+        "analysis": analysis,
+        "sources": context["sources"],
+        "report": report,
+    }
+
+def generate_combined_report(analysis):
+    query = (
+        "Explain MRI reconstruction using diffusion models, "
+        "MSE, SSIM, PSNR, brain tumor segmentation, "
+        "WT, TC, ET, Dice, and limitations of combined "
+        "reconstruction and segmentation workflows."
+    )
+
+    documents = Retriever().search(
+        query,
+        top_k=3,
+    )
+
+    context = build_context(
+        analysis=analysis,
+        retrieved_documents=documents,
+    )
+
+    report = generate_report(context)
+
+    return {
+        "analysis": analysis,
+        "sources": context["sources"],
+        "report": report,
+    }

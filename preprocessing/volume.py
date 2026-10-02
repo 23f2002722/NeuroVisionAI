@@ -28,5 +28,6 @@ def load_nifti_modalities(modalities):
         "image": image,
         "shape": shape,
         "voxel_spacing": voxel_spacing,
+        "affine": load_nifti(modalities["FLAIR"])["affine"],
         "modalities": modalities,
     }
