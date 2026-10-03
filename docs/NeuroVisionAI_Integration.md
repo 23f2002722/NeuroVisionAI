@@ -373,30 +373,3 @@ Missing reconstruction reference
 Missing ground truth is valid; Dice remains unavailable.
 
 LLM failure should not invalidate deterministic analysis.
-
-## 17. Minimum Integration Tests
-
-```text
-NIfTI → UniMatch
-NIfTI → iPixMatch
-DICOM → segmentation
-DICOM ZIP → segmentation
-NIfTI without ground truth
-Standalone reconstruction
-Combined reconstruction + segmentation
-Missing input
-Invalid model
-Incomplete MRI case
-Unsupported ZIP
-```
-
-## 18. Developer Rules
-
-- Reuse existing services and inference implementations.
-- Keep preprocessing, inference, analysis, RAG, and application code separate.
-- Do not duplicate model-loading logic.
-- Do not present model benchmarks as case-specific results.
-- Do not fabricate unavailable metrics.
-- Do not make clinical diagnostic claims.
-- Do not commit secrets, checkpoints, datasets, or generated outputs.
-- Update this document when the public integration contract changes.
