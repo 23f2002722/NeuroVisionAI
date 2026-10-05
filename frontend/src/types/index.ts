@@ -6,6 +6,15 @@ export interface CaseRecord {
   date: string;
   status: 'done' | 'reconstructing' | 'segmenting' | 'pending' | 'error' | string;
   created_at: string;
+  preview_url?: string;
+  input_url?: string;
+  degraded_url?: string;
+  recon_url?: string;
+  seg_url?: string;
+  file_path?: string;
+  wt_pixels?: number;
+  tc_pixels?: number;
+  et_pixels?: number;
 }
 
 export interface ReconstructionResult {
@@ -32,6 +41,7 @@ export interface SegmentationResult {
   tc_pixels: number;
   et_pixels: number;
   model_version: string;
+  seg_url?: string;
   timestamp: string;
 }
 

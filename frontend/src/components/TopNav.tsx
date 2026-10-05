@@ -1,16 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Brain, Sparkles } from 'lucide-react';
+import { Brain } from 'lucide-react';
 
-const STEPS = [
+const NAV_ITEMS = [
   { to: '/',               label: 'Overview' },
-  { to: '/reconstruction', label: '1. Reconstruction' },
-  { to: '/segmentation',   label: '2. Segmentation' },
-  { to: '/results',        label: '3. Side-by-Side Viewer' },
-  { to: '/analysis',       label: '4. Exp A vs B' },
-  { to: '/assistant',      label: '5. Grounded Q&A' },
-  { to: '/report',         label: '6. Clinical Report' },
-  { to: '/methodology',    label: 'Methodology' },
+  { to: '/reconstruction', label: 'Reconstruction' },
+  { to: '/segmentation',   label: 'Segmentation' },
+  { to: '/results',        label: 'Comparative Viewer' },
+  { to: '/report',         label: 'Clinical Report' },
 ];
 
 const TopNav: React.FC = () => {
@@ -20,15 +17,15 @@ const TopNav: React.FC = () => {
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        background: 'rgba(243, 239, 224, 0.92)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E2DDD0',
-        padding: '14px 32px',
+        background: 'rgba(243, 239, 224, 0.96)',
+        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid var(--border-subtle)',
+        padding: '10px 32px',
       }}
     >
       <div
         style={{
-          maxWidth: 1280,
+          maxWidth: 1360,
           margin: '0 auto',
           display: 'flex',
           alignItems: 'center',
@@ -43,52 +40,62 @@ const TopNav: React.FC = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            gap: 10,
             textDecoration: 'none',
-            color: '#1A2421',
+            color: 'var(--text-primary)',
           }}
         >
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
+              width: 32,
+              height: 32,
+              borderRadius: 6,
               background: '#80E7B8',
-              border: '1px solid #5MC896',
+              border: '1px solid #2D8A6B',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Brain size={20} color="#1A2421" />
+            <Brain size={18} color="#1A2421" />
           </div>
           <div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, lineHeight: 1.05, color: '#1A2421' }}>
-              NeuroAI Studio
+            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+              NeuroAI Workstation
             </div>
-            <div style={{ fontSize: 11, color: '#52605B' }}>
-              MRI Reconstruction &amp; Brain Tumor Segmentation
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+              BraTS2020 Multi-Modal Research Platform
             </div>
           </div>
         </NavLink>
 
-        {/* Minimalist Step Navigation */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          {STEPS.map(({ to, label }) => (
+        {/* Workstation Navigation Tabs */}
+        <nav
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            padding: 3,
+            borderRadius: 6,
+            background: '#EAE5D7',
+            border: '1px solid var(--border-subtle)',
+          }}
+        >
+          {NAV_ITEMS.map(({ to, label }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               style={({ isActive }) => ({
-                padding: '8px 14px',
-                borderRadius: 999,
+                padding: '6px 14px',
+                borderRadius: 4,
                 textDecoration: 'none',
-                fontSize: 13,
-                fontWeight: isActive ? 700 : 500,
-                color: '#1A2421',
-                background: isActive ? '#80E7B8' : 'transparent',
-                border: isActive ? '1px solid #65D6A3' : '1px solid transparent',
-                transition: 'all 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+                fontSize: 12.5,
+                fontWeight: isActive ? 600 : 500,
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                background: isActive ? '#FAF8F2' : 'transparent',
+                boxShadow: isActive ? '0 1px 2px rgba(26, 36, 33, 0.06)' : 'none',
+                transition: 'all 0.12s ease',
               })}
             >
               {label}
@@ -96,23 +103,24 @@ const TopNav: React.FC = () => {
           ))}
         </nav>
 
-        {/* Prototype Pill */}
+        {/* System & Hardware Telemetry */}
         <div
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 6,
-            padding: '6px 12px',
-            borderRadius: 999,
-            background: '#FAF8F2',
-            border: '1px solid #E2DDD0',
+            gap: 8,
+            padding: '4px 10px',
+            borderRadius: 4,
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
             fontSize: 11.5,
-            color: '#52605B',
-            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            fontWeight: 500,
+            fontFamily: 'var(--font-mono)',
           }}
         >
-          <Sparkles size={13} color="#1F7A58" />
-          <span>Decision-Support Prototype</span>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#186A4B' }} />
+          <span>Local Engine · RTX 3050 CUDA</span>
         </div>
       </div>
     </header>

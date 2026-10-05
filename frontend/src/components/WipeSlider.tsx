@@ -2,6 +2,7 @@
 // Displays real degraded vs DDPM reconstructed MRI scans with pixel-perfect alignment
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useActiveScan } from '../services/scanState';
 
 interface WipeSliderProps {
   width?: number | string;
@@ -16,9 +17,13 @@ interface WipeSliderProps {
 const WipeSlider: React.FC<WipeSliderProps> = ({
   width = 340,
   height = 340,
-  beforeImage = '/images/mri-degraded.jpg',
-  afterImage = '/images/mri-reconstructed.jpg',
+  beforeImage,
+  afterImage,
 }) => {
+  const [activeScan] = useActiveScan();
+  const currentBefore = beforeImage || (activeScan.isCustom ? activeScan.degradedUrl : '/images/mri-degraded.jpg');
+  const currentAfter = afterImage || (activeScan.isCustom ? activeScan.reconUrl : '/images/mri-reconstructed.jpg');
+
   const [split, setSplit] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({
@@ -59,7 +64,7 @@ const WipeSlider: React.FC<WipeSliderProps> = ({
     >
       {/* ── Base Layer: DDPM Reconstructed (After) ── */}
       <img
-        src={afterImage}
+        src={currentAfter}
         alt="DDPM Reconstructed MRI"
         style={{
           width: '100%',
@@ -83,7 +88,7 @@ const WipeSlider: React.FC<WipeSliderProps> = ({
         }}
       >
         <img
-          src={beforeImage}
+          src={currentBefore}
           alt="Degraded Input MRI"
           style={{
             position: 'absolute',

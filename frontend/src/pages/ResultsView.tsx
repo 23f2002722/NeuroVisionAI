@@ -106,7 +106,6 @@ const ResultsView: React.FC = () => {
   const [showWT, setShowWT] = useState(true);
   const [showTC, setShowTC] = useState(true);
   const [showET, setShowET] = useState(true);
-  const [maskOpacity, setMaskOpacity] = useState(0.72);
   const [contrastLevel, setContrastLevel] = useState(50);
   const [brightnessLevel, setBrightnessLevel] = useState(50);
 
@@ -136,22 +135,21 @@ const ResultsView: React.FC = () => {
                 style={{
                   width: 40,
                   height: 40,
-                  borderRadius: 12,
+                  borderRadius: 10,
                   background: '#80E7B8',
+                  border: '1px solid #2D8A6B',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 0 1px rgba(128, 231, 184, 0.28), 0 4px 20px rgba(128, 231, 184, 0.28)',
                 }}
               >
-                <Brain size={20} color="#fff" />
+                <Brain size={20} color="#1A2421" />
               </div>
               <h1
                 className="section-title"
-                style={{ margin: 0, fontSize: 26, letterSpacing: '-0.025em', fontFamily: 'var(--font-serif)' }}
+                style={{ margin: 0, fontSize: 26, letterSpacing: '-0.02em', fontFamily: 'var(--font-serif)', color: '#1A2421', fontWeight: 700 }}
               >
-                <span className="gradient-text-ai">Synchronized</span>{' '}
-                Pipeline Results
+                Synchronized Pipeline Results
               </h1>
             </div>
             <p className="section-subtitle" style={{ margin: 0 }}>
@@ -345,13 +343,11 @@ const ResultsView: React.FC = () => {
 
           {/* Panel B — DDPM Reconstructed */}
           <div
-            className="glass-card glow-cyan"
+            className="workstation-panel"
             style={{
               flex: 1,
               padding: 0,
               overflow: 'hidden',
-              border: '1px solid var(--mint-border)',
-              boxShadow: '0 0 0 1px rgba(128,231,184,0.2), var(--shadow-md)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -446,12 +442,11 @@ const ResultsView: React.FC = () => {
 
           {/* Panel C — Segmented Overlay */}
           <div
-            className="glass-card glow-emerald"
+            className="workstation-panel"
             style={{
               flex: 1,
               padding: 0,
               overflow: 'hidden',
-              border: '1px solid rgba(45,138,107,0.3)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -504,7 +499,7 @@ const ResultsView: React.FC = () => {
                   showWT={showWT}
                   showTC={showTC}
                   showET={showET}
-                  maskOpacity={maskOpacity}
+                  maskOpacity={0.85}
                   style={{ borderRadius: 8 }}
                 />
               </div>
@@ -803,26 +798,6 @@ const ResultsView: React.FC = () => {
               />
             </div>
 
-            {/* Mask opacity */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 12, color: 'var(--sage)', fontWeight: 600 }}>
-                  Mask Opacity
-                </span>
-                <span className="font-mono" style={{ fontSize: 12, color: 'var(--tc-color)' }}>
-                  {Math.round(maskOpacity * 100)}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={Math.round(maskOpacity * 100)}
-                onChange={(e) => setMaskOpacity(Number(e.target.value) / 100)}
-                style={{ accentColor: 'var(--tc-color)' }}
-              />
-            </div>
-
             {/* Mask toggles */}
             <div>
               <div style={{ fontSize: 12, color: 'var(--sage)', fontWeight: 600, marginBottom: 10 }}>
@@ -884,14 +859,13 @@ const ResultsView: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
             <div
               style={{
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 borderRadius: '50%',
                 background: 'var(--tc-color)',
-                boxShadow: '0 0 8px var(--tc-color)',
               }}
             />
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--forest)', fontFamily: 'var(--font-serif)' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--forest)' }}>
               Reconstruction Quality — Metrics Comparison
             </span>
             <span

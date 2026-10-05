@@ -15,6 +15,7 @@ MB = 1024 * 1024
 CHECKPOINTS = {
     "unimatch": REPO_ROOT / "models" / "segmentation" / "best_unimatch.pth",
     "ipixmatch": REPO_ROOT / "models" / "segmentation" / "chunk3_best_ipixmatch.pth",
+    "reconstruction": REPO_ROOT / "models" / "reconstruction" / "conditional_mri_reconstruction.pth",
 }
 VECTOR_INDEX_DIR = REPO_ROOT / "rag" / "vectorstore"
 

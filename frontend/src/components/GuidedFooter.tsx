@@ -37,29 +37,30 @@ const GuidedFooter: React.FC = () => {
         style={{
           background: '#FAF8F2',
           border: '1px solid #E2DDD0',
-          borderRadius: 18,
-          padding: '20px 26px',
+          borderRadius: 12,
+          padding: '18px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 16,
-          boxShadow: '0 8px 24px rgba(26, 36, 33, 0.04)',
+          boxShadow: '0 1px 4px rgba(26, 36, 33, 0.04)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
+              width: 32,
+              height: 32,
+              borderRadius: 8,
               background: '#80E7B8',
+              border: '1px solid #2D8A6B',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <CheckCircle2 size={18} color="#1A2421" />
+            <CheckCircle2 size={16} color="#1A2421" />
           </div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#52605B' }}>

@@ -1,6 +1,5 @@
-// MRICanvas — Canvas-based MRI renderer with real scan support & clinical mask overlays
-
 import React, { useEffect, useRef, useState } from 'react';
+import { useActiveScan } from '../services/scanState';
 
 interface MRICanvasProps {
   width?: number;
@@ -31,6 +30,7 @@ const MRICanvas: React.FC<MRICanvasProps> = ({
   style,
   className,
 }) => {
+  const [activeScan] = useActiveScan();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [baseLoaded, setBaseLoaded] = useState(false);
   const [overlayLoaded, setOverlayLoaded] = useState(false);
@@ -43,13 +43,32 @@ const MRICanvas: React.FC<MRICanvasProps> = ({
   // Determine base scan source
   let defaultBaseSrc = '/images/mri-reconstructed.jpg';
   if (mode === 'degraded') {
-    defaultBaseSrc = '/images/mri-degraded.jpg';
+    defaultBaseSrc = activeScan.isCustom ? activeScan.degradedUrl : '/images/mri-degraded.jpg';
+  } else if (mode === 'original') {
+    defaultBaseSrc = activeScan.isCustom ? activeScan.inputUrl : '/images/mri-segmentation-input.png';
   } else if (hasMask || mode === 'segmented') {
-    defaultBaseSrc = '/images/mri-segmentation-input.png';
+    defaultBaseSrc = activeScan.isCustom
+      ? (activeScan.inputUrl || activeScan.reconUrl)
+      : '/images/mri-segmentation-input.png';
+  } else {
+    defaultBaseSrc = activeScan.isCustom
+      ? (activeScan.reconUrl || activeScan.inputUrl)
+      : '/images/mri-reconstructed.jpg';
   }
 
-  const activeBaseSrc = imageSrc || defaultBaseSrc;
-  const overlaySrc = '/images/mri-segmentation-overlay.png';
+  // If imageSrc is a generic demo path, override with active custom scan when active
+  let activeBaseSrc = defaultBaseSrc;
+  if (imageSrc) {
+    if (activeScan.isCustom && imageSrc.startsWith('/images/mri-')) {
+      activeBaseSrc = defaultBaseSrc;
+    } else {
+      activeBaseSrc = imageSrc;
+    }
+  }
+
+  const overlaySrc = (activeScan.isCustom && activeScan.segUrl)
+    ? activeScan.segUrl
+    : '/images/mri-segmentation-overlay.png';
 
   // Preload base image
   useEffect(() => {
@@ -99,9 +118,6 @@ const MRICanvas: React.FC<MRICanvasProps> = ({
     // ── 1. Draw Base MRI Scan ─────────────────────────────────
     if (baseImgRef.current && baseImgRef.current.complete && baseImgRef.current.naturalWidth > 0) {
       ctx.save();
-      if (mode === 'degraded') {
-        ctx.filter = 'blur(0.8px) contrast(0.92)';
-      }
       ctx.drawImage(baseImgRef.current, 0, 0, width, height);
       ctx.restore();
     } else {
@@ -117,20 +133,88 @@ const MRICanvas: React.FC<MRICanvasProps> = ({
     // ── 2. Draw Real Segmentation Mask Overlay ────────────────
     if (hasMask) {
       if (overlayImgRef.current && overlayImgRef.current.complete && overlayImgRef.current.naturalWidth > 0) {
-        ctx.save();
-        ctx.globalAlpha = maskOpacity;
-        ctx.drawImage(overlayImgRef.current, 0, 0, width, height);
-        ctx.restore();
-      } else {
-        // Fallback procedural mask
+        try {
+          const offCanvas = document.createElement('canvas');
+          offCanvas.width = width;
+          offCanvas.height = height;
+          const offCtx = offCanvas.getContext('2d');
+          if (offCtx) {
+            offCtx.drawImage(overlayImgRef.current, 0, 0, width, height);
+            const imgData = offCtx.getImageData(0, 0, width, height);
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+              const a = d[i + 3];
+              if (a === 0) continue;
+              const r = d[i];
+              const g = d[i + 1];
+              const b = d[i + 2];
+
+              // Yellow (WT): high red & green, low blue
+              const isWT = r > 180 && g > 140 && b < 110;
+              // Blue (TC): high blue, low red
+              const isTC = b > 160 && r < 130;
+              // Red (ET): high red, low green & blue
+              const isET = r > 180 && g < 130 && b < 130;
+
+              if (isET) {
+                if (!showET) {
+                  if (showTC) {
+                    d[i] = 59; d[i + 1] = 130; d[i + 2] = 246; // fallback to TC (Blue)
+                  } else if (showWT) {
+                    d[i] = 250; d[i + 1] = 204; d[i + 2] = 21; // fallback to WT (Yellow)
+                  } else {
+                    d[i + 3] = 0;
+                  }
+                }
+              } else if (isTC) {
+                if (!showTC) {
+                  if (showWT) {
+                    d[i] = 250; d[i + 1] = 204; d[i + 2] = 21; // fallback to WT (Yellow)
+                  } else {
+                    d[i + 3] = 0;
+                  }
+                }
+              } else if (isWT) {
+                if (!showWT) {
+                  d[i + 3] = 0;
+                }
+              }
+            }
+            offCtx.putImageData(imgData, 0, 0);
+
+            ctx.save();
+            ctx.globalAlpha = maskOpacity;
+            ctx.drawImage(offCanvas, 0, 0);
+            ctx.restore();
+          }
+        } catch {
+          ctx.save();
+          ctx.globalAlpha = maskOpacity;
+          ctx.drawImage(overlayImgRef.current, 0, 0, width, height);
+          ctx.restore();
+        }
+      } else if (!activeScan.isCustom) {
+        // Fallback procedural multi-class mask only for demo placeholder when no custom scan active
         ctx.save();
         ctx.globalAlpha = maskOpacity;
         const tx = cx + rx * 0.30;
         const ty = cy - ry * 0.10;
         if (showWT) {
           ctx.beginPath();
-          ctx.ellipse(tx, ty, rx * 0.30, ry * 0.25, 0.25, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(128, 231, 184, 0.50)';
+          ctx.ellipse(tx, ty, rx * 0.32, ry * 0.28, 0.25, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(250, 204, 21, 0.65)';
+          ctx.fill();
+        }
+        if (showTC) {
+          ctx.beginPath();
+          ctx.ellipse(tx, ty, rx * 0.20, ry * 0.18, 0.25, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.75)';
+          ctx.fill();
+        }
+        if (showET) {
+          ctx.beginPath();
+          ctx.ellipse(tx, ty, rx * 0.11, ry * 0.10, 0.25, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.85)';
           ctx.fill();
         }
         ctx.restore();

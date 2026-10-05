@@ -4,8 +4,8 @@
 // ============================================================
 
 import React, { useState } from 'react';
-import { FileText, Printer, Download, CheckCircle, AlertTriangle } from 'lucide-react';
-import { apiCreateReport, DEMO_CASES } from '../services/api';
+import { FileText, Printer, Download, CheckCircle, AlertTriangle, Sparkles, Send, Bot } from 'lucide-react';
+import { apiCreateReport, apiAgentReport, DEMO_CASES } from '../services/api';
 import DisclaimerBanner from '../components/DisclaimerBanner';
 import type { ReportData } from '../types';
 
@@ -125,6 +125,10 @@ const ResearchReport: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [agentNarrative, setAgentNarrative] = useState<string | null>(null);
+  const [agentPrompt, setAgentPrompt] = useState('');
+  const [isAgentLoading, setIsAgentLoading] = useState(false);
+
   const selectedCaseRecord = DEMO_CASES.find(c => c.id === selectedCase) ?? DEMO_CASES[0];
 
   async function handleGenerate() {
@@ -137,6 +141,20 @@ const ResearchReport: React.FC = () => {
       setError(e instanceof Error ? e.message : 'Failed to generate report.');
     } finally {
       setIsGenerating(false);
+    }
+  }
+
+  async function handleAgentConsult(customQuery?: string) {
+    setIsAgentLoading(true);
+    const query = customQuery || agentPrompt || 'Full clinical findings and tumor margin analysis';
+    try {
+      const res = await apiAgentReport(selectedCase, reportData, query);
+      setAgentNarrative(res.narrative);
+      setAgentPrompt('');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAgentLoading(false);
     }
   }
 
@@ -449,6 +467,145 @@ const ResearchReport: React.FC = () => {
                 ) : (
                   <span style={{ color: 'var(--sage-light)' }}>Partial pipeline data — some stages may not have completed for this case.</span>
                 )}
+              </div>
+
+              {/* ────── AI RESEARCH & REPORTING AGENT ───────── */}
+              <SectionHeader title="AI Clinical &amp; Research Reporting Agent" accent="#80E7B8" />
+              <div
+                className="glass-card no-print"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(128, 231, 184, 0.16) 0%, rgba(250, 248, 242, 0.95) 100%)',
+                  border: '1.5px solid #80E7B8',
+                  borderRadius: 14,
+                  padding: 22,
+                  marginBottom: 24,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 38, height: 38, borderRadius: 10,
+                        background: '#80E7B8', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Bot size={22} color="#1A2421" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--forest)' }}>
+                        NeuroVision AI Clinical Reasoning Agent
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'var(--sage)' }}>
+                        Autonomous case synthesis · Volumetric tumor margins &amp; dual-branch safety rationale
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAgentConsult()}
+                    disabled={isAgentLoading}
+                    className="btn-neuro btn-emerald"
+                    style={{ padding: '8px 16px', fontSize: 12, gap: 6 }}
+                  >
+                    {isAgentLoading ? (
+                      <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Analyzing…</>
+                    ) : (
+                      <><Sparkles size={14} /> Consult AI Agent</>
+                    )}
+                  </button>
+                </div>
+
+                {/* Prompt suggestion chips */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                  {[
+                    'Explain tumor margin & infiltration',
+                    'Summarize for Tumor Board',
+                    'Evaluate ET Enhancing rim vs necrotic TC',
+                    'Dual-branch pipeline rationale',
+                  ].map(chip => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => handleAgentConsult(chip)}
+                      style={{
+                        background: '#FAF8F2',
+                        border: '1px solid #D5CFC0',
+                        padding: '4px 10px',
+                        borderRadius: 20,
+                        fontSize: 11,
+                        color: 'var(--forest)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#80E7B8'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#D5CFC0'; }}
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Agent Narrative Output Box */}
+                <div
+                  style={{
+                    background: '#FAF8F2',
+                    border: '1px solid #E2DDD0',
+                    borderRadius: 10,
+                    padding: '16px 18px',
+                    fontSize: 12.5,
+                    lineHeight: 1.7,
+                    color: 'var(--forest)',
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  {isAgentLoading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--sage)' }}>
+                      <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                      <span>AI Agent is analyzing tumor volumetrics and generating clinical findings…</span>
+                    </div>
+                  ) : agentNarrative ? (
+                    agentNarrative
+                  ) : (
+                    <span style={{ color: 'var(--sage)' }}>
+                      Click <strong>"Consult AI Agent"</strong> or select one of the query chips above to have the AI Clinical Research Agent generate structured radiological conclusions for this case.
+                    </span>
+                  )}
+                </div>
+
+                {/* Custom Query Input */}
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <input
+                    type="text"
+                    placeholder="Ask the AI Agent a custom question about this patient's MRI or tumor metrics..."
+                    value={agentPrompt}
+                    onChange={e => setAgentPrompt(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleAgentConsult(); }}
+                    style={{
+                      flex: 1,
+                      padding: '9px 14px',
+                      borderRadius: 8,
+                      border: '1px solid #D5CFC0',
+                      background: '#fff',
+                      fontSize: 12,
+                      fontFamily: 'var(--font-sans)',
+                      color: 'var(--forest)',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAgentConsult()}
+                    disabled={isAgentLoading || !agentPrompt.trim()}
+                    className="btn-neuro btn-cyan"
+                    style={{ padding: '8px 14px', fontSize: 12, gap: 6 }}
+                  >
+                    <Send size={13} />
+                    Ask Agent
+                  </button>
+                </div>
               </div>
 
               {/* ────── RECONSTRUCTION RESULTS ─────────────── */}

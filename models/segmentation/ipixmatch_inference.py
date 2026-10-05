@@ -106,24 +106,47 @@ class UNet2D(nn.Module):
         return self.outc(feat), feat
 
 
-def load_model(checkpoint_path):
-    model = UNet2D(
-        IN_CHANNELS,
-        NUM_CLASSES,
-        BASE_CHANNELS,
-        DROPOUT,
-    ).to(DEVICE)
+def load_model(checkpoint_path, device=None):
+    if device is None:
+        device = DEVICE
+    try:
+        if torch.cuda.is_available() and getattr(device, "type", "") == "cuda":
+            torch.cuda.empty_cache()
+        model = UNet2D(
+            IN_CHANNELS,
+            NUM_CLASSES,
+            BASE_CHANNELS,
+            DROPOUT,
+        ).to(device)
 
-    checkpoint = torch.load(
-        checkpoint_path,
-        map_location=DEVICE,
-        weights_only=False,
-    )
+        checkpoint = torch.load(
+            checkpoint_path,
+            map_location=device,
+            weights_only=False,
+        )
 
-    model.load_state_dict(checkpoint["teacher_state"])
-    model.eval()
+        model.load_state_dict(checkpoint["teacher_state"])
+        model.eval()
+        return model
+    except Exception as e:
+        print(f"CUDA load notice ({e}), falling back to CPU...")
+        cpu_dev = torch.device("cpu")
+        model = UNet2D(
+            IN_CHANNELS,
+            NUM_CLASSES,
+            BASE_CHANNELS,
+            DROPOUT,
+        ).to(cpu_dev)
 
-    return model
+        checkpoint = torch.load(
+            checkpoint_path,
+            map_location=cpu_dev,
+            weights_only=False,
+        )
+
+        model.load_state_dict(checkpoint["teacher_state"])
+        model.eval()
+        return model
 
 
 def load_h5(image_path):
@@ -154,7 +177,8 @@ def normalize_image(image):
 
 @torch.no_grad()
 def segment(model, image, threshold=0.3):
-    tensor = torch.from_numpy(image).unsqueeze(0).to(DEVICE)
+    dev = next(model.parameters()).device
+    tensor = torch.from_numpy(image).unsqueeze(0).to(dev)
 
     probabilities = torch.sigmoid(model(tensor)[0])
     probabilities = probabilities[0].cpu().numpy()

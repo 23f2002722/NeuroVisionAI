@@ -3,27 +3,28 @@
   --bg-secondary: #FAF8F2;
   --bg-card: #FAF8F2;
   --border-subtle: #E2DDD0;
-  --border-glow: #80E7B8;
+  --border-strong: #C8C2B3;
+  --border-focus: #186A4B;
   --text-primary: #1A2421;
   --text-secondary: #4A5954;
   --text-muted: #6E7D77;
   --cyan: #1F7A58;
-  --cyan-dim: rgba(128, 231, 184, 0.28);
+  --cyan-dim: rgba(31, 122, 88, 0.12);
   --emerald: #186A4B;
-  --emerald-dim: rgba(128, 231, 184, 0.32);
-  --amber: #2D8A6B;
-  --amber-dim: rgba(45, 138, 107, 0.16);
-  --coral: #C85A42;
-  --coral-dim: rgba(217, 107, 82, 0.15);
-  --violet: #1F7A58;
-  --violet-dim: rgba(128, 231, 184, 0.24);
+  --emerald-dim: rgba(24, 106, 75, 0.14);
+  --amber: #B45309;
+  --amber-dim: rgba(180, 83, 9, 0.12);
+  --coral: #B91C1C;
+  --coral-dim: rgba(185, 28, 28, 0.12);
+  --violet: #2D4A3E;
+  --violet-dim: rgba(45, 74, 62, 0.12);
   --mint: #80E7B8;
   --mint-hover: #6CDCA9;
+  --mint-dark: #186A4B;
+  --forest: #1A2421;
   --font-serif: 'Instrument Serif', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --grad-ddpm: linear-gradient(135deg, #1A2421, #1F7A58);
-  --grad-seg: linear-gradient(135deg, #1A2421, #2D8A6B);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
   color-scheme: light !important;
 }
 
@@ -34,193 +35,283 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #F3EFE0 !important;
-  color: #1A2421 !important;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
   font-family: var(--font-sans);
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, .section-title {
-  font-family: var(--font-serif) !important;
-  font-weight: 400 !important;
-  letter-spacing: -0.01em !important;
-  color: #1A2421 !important;
+h1, h2, h3 {
+  color: var(--text-primary) !important;
+  letter-spacing: -0.01em;
 }
 
 .section-title {
-  font-size: 32px !important;
-  margin: 0 0 6px;
+  font-family: var(--font-sans) !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 4px;
 }
 
 .section-subtitle {
-  font-size: 14px;
-  color: #52605B;
-  margin: 0 0 22px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin: 0 0 20px;
+  line-height: 1.5;
 }
 
 .app-shell {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #F3EFE0;
+  background-color: var(--bg-primary);
 }
 
 .main-content {
   flex: 1;
-  margin-left: 0 !important;
-  max-width: 1280px;
+  max-width: 1360px;
   width: 100%;
   margin: 0 auto !important;
-  padding: 36px 32px 48px !important;
-  animation: editorialFadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  padding: 24px 32px 48px !important;
 }
 
-@keyframes editorialFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* ── Workstation Panels & Inspector ── */
+.workstation-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(26, 36, 33, 0.04);
 }
 
+.panel-section {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.panel-section:last-child {
+  border-bottom: none;
+}
+
+.panel-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+/* ── Legacy Glass Card Support (Cleaned to Solid Clinical Surface) ── */
 .glass-card {
-  background: #FAF8F2 !important;
-  border: 1px solid #E2DDD0 !important;
-  border-radius: 18px !important;
-  box-shadow: 0 8px 24px rgba(26, 36, 33, 0.04) !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(26, 36, 33, 0.04) !important;
   backdrop-filter: none !important;
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease !important;
+  transition: border-color 0.15s ease;
 }
 
 .glass-card:hover {
-  transform: translateY(-3px);
-  border-color: #80E7B8 !important;
-  box-shadow: 0 16px 36px rgba(26, 36, 33, 0.08) !important;
+  border-color: var(--border-strong) !important;
 }
 
+/* ── Clinical Badges & Tags ── */
 .badge-neuro {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 999px;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
   font-size: 11.5px;
   font-weight: 600;
   font-family: var(--font-sans);
-  background: rgba(128, 231, 184, 0.25) !important;
-  color: #1A2421 !important;
-  border: 1px solid #80E7B8 !important;
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  background: #EAE5D7 !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
 }
 
-.badge-neuro:hover {
-  background: rgba(128, 231, 184, 0.4) !important;
-  transform: translateY(-1px);
+.badge-neuro.badge-green,
+.badge-neuro.badge-emerald,
+.badge-neuro.badge-cyan {
+  background: rgba(128, 231, 184, 0.22) !important;
+  color: #125439 !important;
+  border-color: #80E7B8 !important;
 }
 
+.badge-neuro.badge-amber {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #854D0E !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+.badge-neuro.badge-coral {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #991B1B !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.badge-neuro.badge-gray {
+  background: #EAE5D7 !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* ── Buttons ── */
 .btn-neuro, .btn-cyan, .btn-emerald {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 11px 22px;
-  border-radius: 999px !important;
-  font-size: 13.5px;
+  padding: 9px 18px;
+  border-radius: 6px !important;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   background: #80E7B8 !important;
   color: #1A2421 !important;
-  border: 1px solid #65D6A3 !important;
-  box-shadow: 0 4px 14px rgba(128, 231, 184, 0.35) !important;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease !important;
+  border: 1px solid #5BC896 !important;
+  box-shadow: 0 1px 2px rgba(26, 36, 33, 0.08) !important;
+  transition: background 0.15s ease, border-color 0.15s ease;
   font-family: var(--font-sans);
 }
 
 .btn-neuro:hover, .btn-cyan:hover, .btn-emerald:hover {
   background: #6CDCA9 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(128, 231, 184, 0.55) !important;
+  border-color: #3EA676 !important;
 }
 
 .btn-neuro:active, .btn-cyan:active, .btn-emerald:active {
-  transform: translateY(0px) scale(0.98);
+  transform: translateY(1px);
 }
 
 .btn-outline-glass {
-  background: #FAF8F2 !important;
-  color: #1A2421 !important;
-  border: 1px solid #D5CFC0 !important;
-  box-shadow: none !important;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease, border-color 0.2s ease !important;
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(26, 36, 33, 0.03) !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
 }
 
 .btn-outline-glass:hover {
-  background: #80E7B8 !important;
-  border-color: #80E7B8 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(128, 231, 184, 0.35) !important;
+  background: #EAE5D7 !important;
+  border-color: var(--border-strong) !important;
+}
+
+/* ── Segmented Control Toggles ── */
+.toggle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #EAE5D7;
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
 }
 
 .toggle-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid #E2DDD0;
-  background: #FAF8F2;
+  padding: 5px 11px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  color: #52605B;
-  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  color: var(--text-secondary);
+  transition: all 0.12s ease;
 }
 
 .toggle-pill:hover {
-  border-color: #80E7B8;
-  color: #1A2421;
-  transform: translateY(-1px);
+  color: var(--text-primary);
 }
 
 .toggle-pill.active-emerald {
-  background: rgba(128, 231, 184, 0.32);
-  border-color: #2D8A6B;
-  color: #1A2421;
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: #713F12;
 }
 
+.toggle-pill.active-amber {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: #1E3A8A;
+}
+
+.toggle-pill.active-coral {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: #7F1D1D;
+}
+
+/* ── Clinical Radiography Table ── */
 .table-neuro {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .table-neuro th {
   text-align: left;
-  padding: 13px 16px;
+  padding: 10px 14px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #52605B;
-  border-bottom: 1px solid #E2DDD0;
-  background: #F3EFE0;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  background: #EDE8D8;
 }
 
 .table-neuro td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #EAE5D7;
-  color: #1A2421;
-  transition: background 0.2s ease;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.table-neuro tr:last-child td {
+  border-bottom: none;
 }
 
 .table-neuro tr:hover td {
-  background: rgba(128, 231, 184, 0.14);
+  background: rgba(128, 231, 184, 0.08);
 }
+
+/* ── Radiological Viewport Bezel ── */
+.viewport-frame {
+  background: #101715;
+  border: 1px solid #283732;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6);
+}
+
+.viewport-tag {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(16, 23, 21, 0.65);
+  padding: 2px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.viewport-tag-tl { top: 8px; left: 8px; }
+.viewport-tag-tr { top: 8px; right: 8px; }
+.viewport-tag-bl { bottom: 8px; left: 8px; }
+.viewport-tag-br { bottom: 8px; right: 8px; }
 
 #root {
   width: 100% !important;
@@ -229,34 +320,26 @@ h1, h2, .section-title {
   text-align: left !important;
   border: none !important;
   display: block !important;
-  background-color: #F3EFE0 !important;
-  color: #1A2421 !important;
-}
-
-.gradient-text-ddpm, .gradient-text-seg {
-  color: #1F7A58 !important;
-  -webkit-text-fill-color: #1F7A58 !important;
-  background: none !important;
-  font-style: italic;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
 }
 
 .input-neuro {
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #E2DDD0;
-  background: #FAF8F2;
-  color: #1A2421;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 
 .input-neuro:focus {
-  border-color: #80E7B8;
-  box-shadow: 0 0 0 3px rgba(128, 231, 184, 0.2);
+  border-color: #186A4B;
+  box-shadow: 0 0 0 2px rgba(24, 106, 75, 0.15);
 }
-
