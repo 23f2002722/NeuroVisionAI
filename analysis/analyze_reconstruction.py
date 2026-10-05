@@ -1,4 +1,6 @@
 import json
+
+import nibabel as nib
 import numpy as np
 from PIL import Image
 from skimage.metrics import structural_similarity
@@ -9,26 +11,59 @@ def load_image(path):
     return np.asarray(image, dtype=np.float32) / 255.0
 
 
+def load_volume(path):
+    image = nib.load(str(path))
+    volume = image.get_fdata(dtype=np.float32)
+
+    volume_min = volume.min()
+    volume_max = volume.max()
+
+    if volume_max > volume_min:
+        volume = (
+            (volume - volume_min)
+            / (volume_max - volume_min)
+        )
+    else:
+        volume = np.zeros_like(volume)
+
+    return volume
+
+
 def calculate_metrics(reference_path, reconstructed_path):
-    reference = load_image(reference_path)
-    reconstructed = load_image(reconstructed_path)
+    reference = load_volume(reference_path)
+    reconstructed = load_volume(reconstructed_path)
 
     if reference.shape != reconstructed.shape:
         raise ValueError(
-            f"Image shape mismatch: {reference.shape} vs {reconstructed.shape}"
+            f"Volume shape mismatch: "
+            f"{reference.shape} vs {reconstructed.shape}"
         )
 
-    mse = float(np.mean((reference - reconstructed) ** 2))
-
-    ssim = float(
-        structural_similarity(
-            reference,
-            reconstructed,
-            data_range=1.0,
-        )
+    mse = float(
+        np.mean((reference - reconstructed) ** 2)
     )
 
-    psnr = float("inf") if mse == 0 else float(10 * np.log10(1.0 / mse))
+    ssim_scores = []
+
+    for slice_index in range(reference.shape[2]):
+        reference_slice = reference[:, :, slice_index]
+        reconstructed_slice = reconstructed[:, :, slice_index]
+
+        ssim_scores.append(
+            structural_similarity(
+                reference_slice,
+                reconstructed_slice,
+                data_range=1.0,
+            )
+        )
+
+    ssim = float(np.mean(ssim_scores))
+
+    psnr = (
+        float("inf")
+        if mse == 0
+        else float(10 * np.log10(1.0 / mse))
+    )
 
     return {
         "mse": mse,
@@ -37,7 +72,10 @@ def calculate_metrics(reference_path, reconstructed_path):
     }
 
 
-def analyze_reconstruction(reference_path=None, reconstructed_path=None):
+def analyze_reconstruction(
+    reference_path=None,
+    reconstructed_path=None,
+):
     result = {
         "available": False,
         "metrics": {},
@@ -59,8 +97,10 @@ def save_analysis(analysis, output_path):
 
 
 if __name__ == "__main__":
-    reference_file = "tests/reference.png"
-    reconstructed_file = "tests/reconstructed.png"
+    reference_file = "tests/reference.nii.gz"
+    reconstructed_file = (
+        "tests/reconstructed.nii.gz"
+    )
     output_file = "tests/reconstruction_analysis.json"
 
     result = analyze_reconstruction(

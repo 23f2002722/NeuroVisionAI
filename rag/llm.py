@@ -10,6 +10,42 @@ load_dotenv()
 
 
 def build_fallback_report(analysis):
+    if "metrics" in analysis:
+        metrics = analysis.get("metrics", {})
+
+        lines = [
+            "## AI-Assisted Medical Imaging Research Report",
+            "",
+            "Gemini report generation was unavailable. "
+            "The following report was generated from the structured reconstruction analysis.",
+            "",
+            "### 1. Reconstruction Summary",
+            "",
+            f"Model: `{analysis.get('model', 'conditional_ddpm')}`",
+            f"Analysis available: {analysis.get('available')}",
+            "",
+            "### 2. Reconstruction Metrics",
+            "",
+            f"- MSE: {metrics.get('mse')}",
+            f"- SSIM: {metrics.get('ssim')}",
+            f"- PSNR: {metrics.get('psnr')} dB",
+            "",
+            "Lower MSE and higher SSIM/PSNR generally indicate closer "
+            "agreement with the reference image.",
+            "",
+            "### 3. Limitations",
+            "",
+            "These metrics are computed for the provided reconstruction and reference.",
+            "They should not be interpreted as a clinical diagnosis or as a model benchmark.",
+            "",
+            "### 4. Sources",
+            "",
+            "The AI-generated report could not be produced because the configured "
+            "LLM service was temporarily unavailable.",
+        ]
+
+        return "\n".join(lines)
+
     classes = analysis.get("classes", {})
 
     lines = [
@@ -39,6 +75,10 @@ def build_fallback_report(analysis):
 
     for name, label in labels.items():
         value = classes.get(name, {})
+
+        mean_probability = value.get("mean_probability")
+        max_probability = value.get("max_probability")
+
         lines.extend([
             f"**{label} ({name})**",
             f"- Predicted pixels: {value.get('predicted_pixels')}",
@@ -46,8 +86,12 @@ def build_fallback_report(analysis):
             f"- Affected slices: {value.get('affected_slices')}",
             f"- Maximum predicted pixels: {value.get('max_slice_pixels')} "
             f"on slice {value.get('max_slice')}",
-            f"- Mean probability: {value.get('mean_probability'):.4f}",
-            f"- Maximum probability: {value.get('max_probability'):.4f}",
+            f"- Mean probability: "
+            f"{mean_probability:.4f}" if mean_probability is not None
+            else "- Mean probability: unavailable",
+            f"- Maximum probability: "
+            f"{max_probability:.4f}" if max_probability is not None
+            else "- Maximum probability: unavailable",
             f"- Dice: {value.get('dice')}",
             "",
         ])

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable, TypeVar
 
 from dotenv import load_dotenv
 
@@ -25,63 +26,66 @@ DISCLAIMER = (
 )
 
 
-def _bool(value: str | None, default: bool) -> bool:
-    if value is None or value.strip() == "":
+T = TypeVar("T")
+
+
+def _env(
+    name: str,
+    default: T,
+    cast: Callable[[str], T],
+) -> T:
+    """Read an env var; empty or unset gives `default`."""
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
         return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+    return cast(raw.strip())
 
 
-def _float(value: str | None, default: float) -> float:
-    if value is None or value.strip() == "":
-        return default
-    return float(value)
+def _as_bool(value: str) -> bool:
+    return value.lower() in {"1", "true", "yes", "on"}
 
 
-def _int(value: str | None, default: int) -> int:
-    if value is None or value.strip() == "":
-        return default
-    return int(value)
-
-
-def _list(value: str | None, default: tuple[str, ...]) -> tuple[str, ...]:
-    if value is None or value.strip() == "":
-        return default
+def _as_list(value: str) -> tuple[str, ...]:
     return tuple(item.strip() for item in value.split(",") if item.strip())
 
 
 @dataclass(frozen=True)
 class Settings:
+    """Everything the backend needs. Only the fields read in from_env() are
+    configurable through the environment; the rest are plain defaults that
+    can still be overridden in code (e.g. in tests)."""
+
+    # --- environment-configurable (see .env.example) ---
     pipeline_mode: str = "real"  # "real" | "mock"
     data_dir: Path = REPO_ROOT / "data"
-    default_model: str = "unimatch"
-    allowed_models: tuple[str, ...] = ("unimatch", "ipixmatch")
-
+    host: str = "127.0.0.1"
+    port: int = 8000
     max_upload_bytes: int = 500 * MB
-    max_extracted_bytes: int = 2000 * MB
-    max_files: int = 2000
-    max_upload_files: int = 10
-    max_compression_ratio: int = 500
-
-    max_queue_size: int = 10
     job_timeout_seconds: int = 1800
     retention_days: float = 7.0
-    cleanup_interval_seconds: int = 600
-
     cors_origins: tuple[str, ...] = (
         "http://localhost:3000",
         "http://localhost:5173",
     )
-
-    # Upstream rag/llm.py raises (instead of falling back) when the key is
-    # missing. Set REQUIRE_LLM_KEY=false once that is fixed upstream.
-    require_llm_key: bool = True
-    provisional_metrics_warning: bool = True
-
     mock_delay_seconds: float = 3.0
     mock_fail: bool = False
-
     log_level: str = "INFO"
-    extra: dict = field(default_factory=dict)
+
+    # --- fixed defaults ---
+    default_model: str = "unimatch"
+    allowed_models: tuple[str, ...] = tuple(CHECKPOINTS)
+    max_extracted_bytes: int = 2000 * MB
+    max_files: int = 2000
+    max_upload_files: int = 10
+    max_compression_ratio: int = 500
+    max_queue_size: int = 10
+    cleanup_interval_seconds: int = 600
+
+    # Upstream rag/llm.py raises (instead of falling back to the deterministic
+    # report) when GEMINI_API_KEY is missing, so real mode refuses new cases
+    # without it. Set to False once that is fixed upstream.
+    require_llm_key: bool = True
+    provisional_metrics_warning: bool = True
 
     @property
     def cases_dir(self) -> Path:
@@ -90,35 +94,54 @@ class Settings:
     @classmethod
     def from_env(cls) -> "Settings":
         load_dotenv(REPO_ROOT / ".env")
-        env = os.environ.get
+        d = cls()
 
-        mode = (env("PIPELINE_MODE") or "real").strip().lower()
+        mode = _env("PIPELINE_MODE", d.pipeline_mode, str).lower()
         if mode not in {"real", "mock"}:
             raise ValueError("PIPELINE_MODE must be 'real' or 'mock'")
 
-        data_dir = Path(env("DATA_DIR") or REPO_ROOT / "data")
+        data_dir = Path(_env("DATA_DIR", d.data_dir, Path))
+
         if not data_dir.is_absolute():
             data_dir = REPO_ROOT / data_dir
 
-        defaults = cls()
         return cls(
             pipeline_mode=mode,
             data_dir=data_dir,
-            default_model=(env("DEFAULT_MODEL") or defaults.default_model).strip().lower(),
-            allowed_models=_list(env("ALLOWED_MODELS"), defaults.allowed_models),
-            max_upload_bytes=int(_float(env("MAX_UPLOAD_MB"), 500) * MB),
-            max_extracted_bytes=int(_float(env("MAX_EXTRACTED_MB"), 2000) * MB),
-            max_files=_int(env("MAX_FILES"), defaults.max_files),
-            max_upload_files=_int(env("MAX_UPLOAD_FILES"), defaults.max_upload_files),
-            max_compression_ratio=_int(env("MAX_COMPRESSION_RATIO"), defaults.max_compression_ratio),
-            max_queue_size=_int(env("MAX_QUEUE_SIZE"), defaults.max_queue_size),
-            job_timeout_seconds=_int(env("JOB_TIMEOUT_SECONDS"), defaults.job_timeout_seconds),
-            retention_days=_float(env("RETENTION_DAYS"), defaults.retention_days),
-            cleanup_interval_seconds=_int(env("CLEANUP_INTERVAL_SECONDS"), defaults.cleanup_interval_seconds),
-            cors_origins=_list(env("CORS_ORIGINS"), defaults.cors_origins),
-            require_llm_key=_bool(env("REQUIRE_LLM_KEY"), True),
-            provisional_metrics_warning=_bool(env("PROVISIONAL_METRICS_WARNING"), True),
-            mock_delay_seconds=_float(env("MOCK_DELAY_SECONDS"), defaults.mock_delay_seconds),
-            mock_fail=_bool(env("MOCK_FAIL"), False),
-            log_level=(env("LOG_LEVEL") or "INFO").upper(),
+            host=_env("BACKEND_HOST", d.host, str),
+            port=_env("BACKEND_PORT", d.port, int),
+            max_upload_bytes=int(
+                _env(
+                    "MAX_UPLOAD_MB",
+                    d.max_upload_bytes / MB,
+                    float,
+                )
+                * MB
+            ),
+            job_timeout_seconds=_env(
+                "JOB_TIMEOUT_SECONDS",
+                d.job_timeout_seconds,
+                int,
+            ),
+            retention_days=_env(
+                "RETENTION_DAYS",
+                d.retention_days,
+                float,
+            ),
+            cors_origins=_env(
+                "CORS_ORIGINS",
+                d.cors_origins,
+                _as_list,
+            ),
+            mock_delay_seconds=_env(
+                "MOCK_DELAY_SECONDS",
+                d.mock_delay_seconds,
+                float,
+            ),
+            mock_fail=_env(
+                "MOCK_FAIL",
+                d.mock_fail,
+                _as_bool,
+            ),
+            log_level=_env("LOG_LEVEL", d.log_level, str).upper(),
         )
